@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jsdw/advent-of-code-2023/internal/day01"
+	"github.com/jsdw/advent-of-code-2023/internal/day02"
 )
 
 func main() {
@@ -46,6 +47,7 @@ func main() {
 	// Our map of solutions that can be selected; nil for any missing ones.
 	solutions := map[int][2](func(string) error){
 		1: {day01.Star1, day01.Star2},
+		2: {day02.Star1, day02.Star2},
 	}
 
 	daySolutions, foundDay := solutions[day]

@@ -43,6 +43,8 @@ func Star2(input string) error {
 		return fmt.Errorf("input file expected")
 	}
 
+	// I used a regexp first, but that doesn't handle overlaps.
+	// So just look for each string at each position.
 	type digit struct {
 		s string
 		n int
