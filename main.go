@@ -12,6 +12,7 @@ import (
 	"github.com/jsdw/advent-of-code-2023/internal/day04"
 	"github.com/jsdw/advent-of-code-2023/internal/day05"
 	"github.com/jsdw/advent-of-code-2023/internal/day06"
+	"github.com/jsdw/advent-of-code-2023/internal/day07"
 )
 
 // Our map of solutions that can be selected; nil for any missing ones.
@@ -22,6 +23,7 @@ var solutions = map[int][2](func(string) error){
 	4: {day04.Star1, day04.Star2},
 	5: {day05.Star1, day05.Star2},
 	6: {day06.Star1, day06.Star2},
+	7: {day07.Star1, day07.Star2},
 }
 
 func main() {
