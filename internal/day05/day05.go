@@ -14,17 +14,17 @@ func Star1(input string) error {
 	}
 
 	data := parseInput(input)
-	output := math.MaxInt
+	minOutput := math.MaxInt
 	for _, val := range data.seeds {
 		for _, mapping := range data.mappings {
 			val = mapping.MapNumber(val)
 		}
-		if val < output {
-			output = val
+		if val < minOutput {
+			minOutput = val
 		}
 	}
 
-	fmt.Println(output)
+	fmt.Println(minOutput)
 	return nil
 }
 
@@ -34,27 +34,26 @@ func Star2(input string) error {
 	}
 
 	data := parseInput(input)
-
-	rs := data.SeedRanges()
+	inputRanges := data.SeedRanges()
 	for _, mapping := range data.mappings {
 		outputRanges := []Range{}
-		for _, r := range rs {
-			output := mapping.MapRange(r)
+		for _, inputRange := range inputRanges {
+			output := mapping.MapRange(inputRange)
 			for _, r := range output {
 				outputRanges = append(outputRanges, r)
 			}
 		}
-		rs = outputRanges
+		inputRanges = outputRanges
 	}
 
 	minOutput := math.MaxInt
-	for _, outputRange := range rs {
+	for _, outputRange := range inputRanges {
 		if outputRange.start < minOutput {
 			minOutput = outputRange.start
 		}
 	}
 
-	fmt.Println(minOutput, "(currently broken)")
+	fmt.Println(minOutput)
 	return nil
 }
 
@@ -118,7 +117,15 @@ func (mapping *Mapping) MapRange(r Range) []Range {
 				// inputRange fully encompassed by src
 				// input      |-----|
 				// source |--------------|
-				outputRanges = append(outputRanges, Range{destStart + inputRange.start - srcStart, inputRange.len})
+				outputRanges = append(outputRanges, Range{destStart + (inputRange.start - srcStart), inputRange.len})
+			} else if inputRange.start < srcStart && inputRangeEnd > srcEnd {
+				foundMapping = true
+				// inputRange larger than src range
+				// input  |-----------|
+				// source    |-----|
+				inputRanges = append(inputRanges, Range{inputRange.start, srcStart - inputRange.start})
+				outputRanges = append(outputRanges, Range{destStart, rangeLen})
+				inputRanges = append(inputRanges, Range{srcEnd, inputRangeEnd - srcEnd})
 			} else if inputRange.start < srcStart && inputRangeEnd > srcStart {
 				foundMapping = true
 				// inputRange overlaps start of src range
@@ -131,15 +138,7 @@ func (mapping *Mapping) MapRange(r Range) []Range {
 				// inputRange overlaps end of src range
 				// input       |------|
 				// source |--------|
-				outputRanges = append(outputRanges, Range{destStart + inputRange.start - srcStart, srcEnd - inputRange.start})
-				inputRanges = append(inputRanges, Range{srcEnd, inputRangeEnd - srcEnd})
-			} else if inputRange.start < srcStart && inputRangeEnd > srcEnd {
-				foundMapping = true
-				// inputRange larger than src range
-				// input  |-----------|
-				// source    |-----|
-				inputRanges = append(inputRanges, Range{inputRange.start, srcStart - inputRange.start})
-				outputRanges = append(outputRanges, Range{destStart, rangeLen})
+				outputRanges = append(outputRanges, Range{destStart + (inputRange.start - srcStart), srcEnd - inputRange.start})
 				inputRanges = append(inputRanges, Range{srcEnd, inputRangeEnd - srcEnd})
 			}
 		}
@@ -158,7 +157,7 @@ func parseInput(input string) Data {
 	seeds := digitsInLine(sections[0])
 	mappings := []Mapping{}
 
-	for _, section := range sections {
+	for _, section := range sections[1:] {
 		lines := strings.Split(strings.TrimSpace(section), "\n")
 		name := lines[0]
 		ranges := [][]int{}
