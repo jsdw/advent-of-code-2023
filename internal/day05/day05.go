@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/jsdw/advent-of-code-2023/internal/utils/sliceutils"
 )
 
 func Star1(input string) error {
@@ -38,10 +40,7 @@ func Star2(input string) error {
 	for _, mapping := range data.mappings {
 		outputRanges := []Range{}
 		for _, inputRange := range inputRanges {
-			output := mapping.MapRange(inputRange)
-			for _, r := range output {
-				outputRanges = append(outputRanges, r)
-			}
+			outputRanges = sliceutils.AppendSlice(outputRanges, mapping.MapRange(inputRange))
 		}
 		inputRanges = outputRanges
 	}

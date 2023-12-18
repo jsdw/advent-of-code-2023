@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/jsdw/advent-of-code-2023/internal/utils/mathutils"
+	"github.com/jsdw/advent-of-code-2023/internal/utils/sliceutils"
 )
 
 func Star1(inputString string) error {
@@ -54,54 +57,84 @@ func Star2(inputString string) error {
 		return fmt.Errorf("Cannot parse input: %v", err)
 	}
 
-	m := map[string]Mapping{}
-	currents := []Mapping{}
-	for _, mapping := range input.mappings {
-		m[mapping.src] = mapping
-		if strings.HasSuffix(mapping.src, "A") {
-			currents = append(currents, mapping)
-		}
+	// This takes way too long to do "manually"; it turns out that
+	// each input takes a fixed number of steps to get to a finish,
+	// and loops this same number each time. So we can get all of these
+	// periods (erroring if this assumption is broken) and then find
+	// the lowest common multiple of them all to find out when they all
+	// converge
+	periods, err := findPeriodForStarts(input)
+	if err != nil {
+		return fmt.Errorf("Cannot find periods: %v", err)
 	}
 
-	steps := 0
-
-	// Start at all nodes ending with A. Stop when all nodes
-	// end with Z. This is slow. Maybe quicker to find steps/
-	// period for each node and then some common factor or
-	// something.
-outer:
-	for {
-		for _, dir := range input.directions {
-			steps += 1
-			for currentIdx, current := range currents {
-				if dir == LEFT {
-					currents[currentIdx] = m[current.left]
-				} else {
-					currents[currentIdx] = m[current.right]
-				}
-			}
-
-			endsWithZ := func(t Mapping) bool {
-				return strings.HasSuffix(t.src, "Z")
-			}
-
-			if all(currents, endsWithZ) {
-				break outer
-			}
-		}
-	}
-
-	fmt.Println(steps)
+	lcm := mathutils.LCMSlice(periods)
+	fmt.Println(lcm)
 	return nil
 }
 
-func all[T any](input []T, f func(T) bool) bool {
-	for _, val := range input {
-		if !f(val) {
-			return false
+func findPeriodForStarts(input Input) ([]int, error) {
+	m := map[string]Mapping{}
+	for _, mapping := range input.mappings {
+		m[mapping.src] = mapping
+	}
+
+	currents := sliceutils.KeepIf(input.mappings, func(m Mapping) bool {
+		return strings.HasSuffix(m.src, "A")
+	})
+
+	type CurrentData struct {
+		start              string
+		end                string
+		current            Mapping
+		stepsToFinish      int
+		stepsToFinishAgain int
+	}
+
+	currentsWithData := sliceutils.Map(currents, func(m Mapping) *CurrentData {
+		return &CurrentData{
+			start:              m.src,
+			end:                "",
+			current:            m,
+			stepsToFinish:      0,
+			stepsToFinishAgain: 0,
+		}
+	})
+
+	for _, c := range currentsWithData {
+		steps := 0
+
+	outer:
+		for {
+			for _, dir := range input.directions {
+				steps += 1
+				if dir == LEFT {
+					c.current = m[c.current.left]
+				} else {
+					c.current = m[c.current.right]
+				}
+
+				if strings.HasSuffix(c.current.src, "Z") {
+					if c.end == "" {
+						c.stepsToFinish = steps
+						c.end = c.current.src
+					} else {
+						if c.current.src != c.end {
+							return []int{}, fmt.Errorf("Value %v did not loop around to itself", c.start)
+						}
+						c.stepsToFinishAgain = steps - c.stepsToFinish
+						if c.stepsToFinish != c.stepsToFinishAgain {
+							return []int{}, fmt.Errorf("Value %v did not loop to end again in same number of steps", c.start)
+						}
+						break outer
+					}
+				}
+			}
 		}
 	}
-	return true
+
+	mapStepsToFinish := func(c *CurrentData) int { return c.stepsToFinish }
+	return sliceutils.Map(currentsWithData, mapStepsToFinish), nil
 }
 
 type Input struct {
