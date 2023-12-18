@@ -46,3 +46,16 @@ func Map[T any, R any](input []T, f func(T) R) []R {
 	}
 	return outputs
 }
+
+// Fold a slice of values into a single value
+func Fold[T any, R any](input []T, r R, f func(R, T) R) R {
+	for _, val := range input {
+		r = f(r, val)
+	}
+	return r
+}
+
+// Get last element in slice or panic if empty
+func Last[T any](input []T) T {
+	return input[len(input)-1]
+}
